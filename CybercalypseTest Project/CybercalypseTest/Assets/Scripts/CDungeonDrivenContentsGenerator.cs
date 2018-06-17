@@ -1,8 +1,10 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using Random = UnityEngine.Random;
 
-public class CDungeonDrivenContentsGenerator : MonoBehaviour {
+public class CDungeonDrivenContentsGenerator : MonoBehaviour
+{
     // 상수
     const float TILE_LENGTH = 0.16f;
 
@@ -11,59 +13,43 @@ public class CDungeonDrivenContentsGenerator : MonoBehaviour {
     private List<Chamber> chamberList;
     private List<Passage> passageList;
 
+    // 유니티 상에서 방과 통로의 개수 설정 값, 초기화 이후에는 사용되지 않는 변수
+    public int numOfChamber;
+    public int numOfPassage;
+    // 처음 방이 만들어지는 초기 위치 설정
+    public Vector2 startPos = new Vector2(0.0f, 0.0f);
+
+    // 프로퍼티
+    public int NumOfChamber { get; private set; }
+    public int NumOfPassage { get; private set; }
 
     void Awake()
     {
         tileData = new Dictionary<Vector2, ETileType>();
+        InitializeGenerator();
     }
 
-
-}
-
-// 생성할 타입의 종류
-public enum ETileType
-{
-    Flat, Uphill, Downhill, Foothold, Ceiling, Wall, Stuff, Empty, Portal
-}
-// 순서대로 평지, 오르막길, 내리막길, 발판, 천장, 벽, 쓸모없는 공간, 플레이어가 다닐 수 있는 빈 공간, 포탈
-
-// Chamber에서 다른 Chamber로 향할 수 있는 방향
-public enum EPassageDirection
-{
-    Right, Left, Up, Down, RightUp, LeftUp, RightDown, LeftDown
-}
-
-
-
-// 방
-public class Chamber
-{
-    public int Width { get; private set; }
-    public int Height { get; private set; }
-
-    private Dictionary<EPassageDirection, Passage> passageList;
-
-    public Chamber(int width, int height)
+    private void InitializeGenerator()
     {
-        Width = width;
-        Height = height;
+        tileData = new Dictionary<Vector2, ETileType>();
+        chamberList = new List<Chamber>();
+        passageList = new List<Passage>();
 
-        passageList = new Dictionary<EPassageDirection, Passage>();
+        NumOfChamber = numOfChamber;
+        NumOfPassage = numOfPassage;
     }
-}
 
-// Chamber와 Chamber를 이어주는 통로
-public class Passage
-{
-    // 통로 출발 지점과
-    public Vector3 StartPos { get; private set; }
-    public Vector3 EndPos { get; private set; }
-    public float Interval { get; private set; }
-
-    public Passage(Vector3 start, Vector3 end, float interval)
+    public void StartDungeonGenerator()
     {
-        StartPos = start;
-        EndPos = end;
-        Interval = interval;
+        // Chamber의 상대 좌표를 정하는 알고리즘 구현하기
+    }
+
+    public void RegisterChamberToList(Chamber chamber)
+    {
+        chamberList.Add(chamber);
+    }
+    public void RegisterPassageToList(Passage passage)
+    {
+        passageList.Add(passage);
     }
 }

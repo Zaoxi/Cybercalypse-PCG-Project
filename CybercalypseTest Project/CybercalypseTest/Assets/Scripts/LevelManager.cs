@@ -2,10 +2,11 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class ContentsGeneratingManager : SingleTonManager<ContentsGeneratingManager>
+public class LevelManager : SingleTonManager<LevelManager>
 {
     public CDungeonDrivenContentsGenerator DungeonGenerator { get; private set; }
     public CPlayerDrivenContentsGenerator WorldGenerator { get; private set; }
+    public PassageDirectionPool PassageDirectionPool { get; private set; }
 
 	new void Awake()
     {
@@ -13,7 +14,11 @@ public class ContentsGeneratingManager : SingleTonManager<ContentsGeneratingMana
 
         DungeonGenerator = new CDungeonDrivenContentsGenerator();
         WorldGenerator = new CPlayerDrivenContentsGenerator();
+        PassageDirectionPool = new PassageDirectionPool();
     }
 
-
+    public void StartDungeonGenerator()
+    {
+        DungeonGenerator.StartDungeonGenerator();
+    }
 }
