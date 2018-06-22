@@ -4,21 +4,16 @@ using UnityEngine;
 
 public class LevelManager : SingleTonManager<LevelManager>
 {
-    public CDungeonDrivenContentsGenerator DungeonGenerator { get; private set; }
-    public CPlayerDrivenContentsGenerator WorldGenerator { get; private set; }
+    public CGraphDrivenContentsGenerator GraphGenerator { get; private set; }
+    public CGridDrivenContentsGenerator GridGenerator { get; private set; }
     public PassageDirectionPool PassageDirectionPool { get; private set; }
 
-	new void Awake()
+    new void Awake()
     {
         base.Awake();
 
-        DungeonGenerator = new CDungeonDrivenContentsGenerator();
-        WorldGenerator = new CPlayerDrivenContentsGenerator();
+        GraphGenerator = new CGraphDrivenContentsGenerator();
+        GridGenerator = new CGridDrivenContentsGenerator();
         PassageDirectionPool = new PassageDirectionPool();
-    }
-
-    public void StartDungeonGenerator()
-    {
-        DungeonGenerator.StartDungeonGenerator();
     }
 }
