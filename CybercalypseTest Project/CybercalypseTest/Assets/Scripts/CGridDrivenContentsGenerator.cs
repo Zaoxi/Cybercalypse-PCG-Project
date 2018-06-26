@@ -3,7 +3,8 @@ using System.Collections.Generic;
 using UnityEngine;
 using Random = UnityEngine.Random;
 
-public class CGridDrivenContentsGenerator : MonoBehaviour {
+public class CGridDrivenContentsGenerator : MonoBehaviour
+{
     // 상대 좌표에 곱할 상수
     const float TILE_LENGTH = 0.16f;
     // 해당하는 상대좌표에 어떤 종류의 타일이 배치되었는지 저장
@@ -21,7 +22,6 @@ public class CGridDrivenContentsGenerator : MonoBehaviour {
     private Vector2Int startChamber;
     // 도착 지점의 Chamber 상대 좌표
     private Vector2Int endChamber;
-
     void Awake()
     {
         tilePosition = new Dictionary<Vector2Int, ETileType>();
@@ -41,7 +41,8 @@ public class CGridDrivenContentsGenerator : MonoBehaviour {
     {
         makeEssentialPath();
         Debug.Log("Essential Over");
-        //makeDummyPath(startChamber);
+        makeDummyPath(startChamber);
+        Debug.Log("Dummy Over");
     }
     private void Start()
     {
@@ -52,11 +53,11 @@ public class CGridDrivenContentsGenerator : MonoBehaviour {
     // 정해진 그리드 내에 None Chamber를 생성
     private void makeNoneChamber()
     {
-        for(int i=0; i<numOfChamberInVertical; i++)
+        for (int i = 0; i < numOfChamberInVertical; i++)
         {
-            for(int j=0; j<numOfChamberInHorizontal; j++)
+            for (int j = 0; j < numOfChamberInHorizontal; j++)
             {
-                chamberPosition.Add(new Vector2Int(i, j), new CChamber(EChamberType.None));
+                chamberPosition.Add(new Vector2Int(i, j), new CChamber(EChamberType.None, new Vector2Int(i, j)));
             }
         }
     }
@@ -93,17 +94,13 @@ public class CGridDrivenContentsGenerator : MonoBehaviour {
         List<Vector2Int> adjacentList = new List<Vector2Int>();
         List<Vector2Int> availableList = new List<Vector2Int>();
         // 필수 경로가 아닌 경우에는 역으로 이동하는 경로도 고려
-        if(!isEssential)
+        if (!isEssential)
         {
             adjacentList.Add(new Vector2Int(path.x - 1, path.y)); // left
-            //adjacentList.Add(new Vector2Int(path.x - 1, path.y + 1)); // up left
-            //adjacentList.Add(new Vector2Int(path.x - 1, path.y - 1)); // down left
         }
         adjacentList.Add(new Vector2Int(path.x, path.y + 1)); //up
         adjacentList.Add(new Vector2Int(path.x, path.y - 1)); // down
         adjacentList.Add(new Vector2Int(path.x + 1, path.y)); // right
-        //adjacentList.Add(new Vector2Int(path.x + 1, path.y + 1)); // up right
-        //adjacentList.Add(new Vector2Int(path.x + 1, path.y - 1)); // down right
 
         adjacentList.ForEach(delegate (Vector2Int adjPath)
         {
@@ -118,38 +115,44 @@ public class CGridDrivenContentsGenerator : MonoBehaviour {
     // start Chamber와 end Chamber를 이어주는 메소드, 두 Chamber는 상대좌표 거리가 1만큼 차이나야 한다.
     private void addFromCurrentToNextChamberPassage(Vector2Int start, Vector2Int end)
     {
-        Debug.Log(start + "->" + end);
         chamberPosition[start].NextChamberPosition.Add(end);
+        chamberPosition[end].PrevChamberPosition = start;
     }
     // 생성된 필수 경로를 기준으로 더미 경로를 생성한다.
     private void makeDummyPath(Vector2Int start)
     {
-        int possibility = (int)Random.Range(0.0f, 5.0f);
-
-        // Dummy 경로 생성을 후위 순회 기준으로 생성
-        if(start != endChamber)
+        // 해당 Chamber가 필수 경로 상의 Chamber인 경우
+        if (chamberPosition[start].ChamberType == EChamberType.Essential && chamberPosition[start].NextChamberPosition.Count != 0)
         {
+            Debug.Log(start);
+            // 다음 필수경로를 대상으로 실행
             makeDummyPath(chamberPosition[start].NextChamberPosition[0]);
         }
-        // 해당 더미 경로 종료
-        if(possibility == 4)
+
+        int possibility = (int)Random.Range(0.0f, 5.0f);
+        Vector2Int[] adjacentChambers = getAdjacentPath(start, false);
+
+        // 인접한 Chamber가 존재하지 않는 경우
+        if (adjacentChambers.Length == 0)
         {
+            Debug.Log("----");
             return;
         }
-        // 새로운 더미 경로 생성
-        if(possibility == 0 || possibility == 1)
+        int index = (int)Random.Range(0.0f, adjacentChambers.Length);
+        chamberPosition[adjacentChambers[index]].ChamberType = EChamberType.Dummy;
+        addFromCurrentToNextChamberPassage(start, adjacentChambers[index]);
+
+        Debug.Log(adjacentChambers[index]);
+        // 40%의 확률로 길이 확장
+        if (possibility == 0 || possibility == 1 || possibility == 2)
         {
+            makeDummyPath(adjacentChambers[index]);
+        }  // 40% 확률로 새로운 길 분열
+        else if (possibility == 3)
+        {
+            makeDummyPath(adjacentChambers[index]);
             makeDummyPath(start);
         }
-        // 더미 경로 확장, 더이상 더미 경로를 생성할 수 없는 경우에는?
-        Vector2Int[] adjacentPos = getAdjacentPath(start, false);
-        possibility = (int)Random.Range(0.0f, adjacentPos.Length);
-        // 현재 경로의 연결 경로 추가
-        addFromCurrentToNextChamberPassage(start, adjacentPos[possibility]);
-        // 선택된 Chamber의 종류를 Dummy로 변경
-        chamberPosition[adjacentPos[possibility]].ChamberType = EChamberType.Dummy;
-        Debug.Log(adjacentPos[possibility]);
-        // 해당 경로를 기준으로 추가 더미 경로 생성
-        makeDummyPath(adjacentPos[possibility]);
+        Debug.Log("----");
     }
 }
