@@ -7,68 +7,68 @@ public class CGridDrivenContentsGenerator : MonoBehaviour
 {
     // 상대 좌표에 곱할 상수
     public const float TILE_LENGTH = 0.16f;
-    // 해당하는 상대좌표에 어떤 종류의 타일이 배치되었는지 저장
-    public Dictionary<Vector2Int, ETileType> TilePosition { get; private set; }
+    
     // 그리드 사각형 내에 어떤 그리드에 어떤 Chamber가 위치하는지 저장
     public Dictionary<Vector2Int, CChamber> ChamberPosition { get; private set; }
 
     // 각 Chamber에 대한 공통 정보
-    public int ChamberWidth { get; private set; }
-    public int ChamberHeight { get; private set; }
     public int NumOfChamberInHorizontal { get; private set; }
     public int NumOfChamberInVertical { get; private set; }
 
     // 출발 지점의 Chamber 상대 좌표
-    public Vector2Int StartChamber { get; private set; }
+    public Vector2Int StartChamberPos { get; private set; }
     // 도착 지점의 Chamber 상대 좌표
-    public Vector2Int EndChamber { get; private set; }
+    public Vector2Int EndChamberPos { get; private set; }
+
+    private AContentsGenerator generator;
 
     void Awake()
     {
-        TilePosition = new Dictionary<Vector2Int, ETileType>();
         ChamberPosition = new Dictionary<Vector2Int, CChamber>();
-    }
-
-    /// <summary>
-    /// 생성할 맵에 대한 최소 정보 입력(Chamber의 가로, 세로, Chamber의 가로 개수, Chamber의 세로 개수)
-    /// </summary>
-    public void InitGenerator(int width, int height, int numOfHorizontal, int numOfVertical)
-    {
-        ChamberWidth = width;
-        ChamberHeight = height;
-        NumOfChamberInHorizontal = numOfHorizontal;
-        NumOfChamberInVertical = numOfVertical;
-        makeNoneChamber();
-        
-    }
-
-    // 맵 구동기 가동
-    public void StartGenerator()
-    {
-        makeEssentialPath();
-        Debug.Log("Essential Over");
-        makeDummyPath(StartChamber);
-        Debug.Log("Dummy Over");
     }
     private void Start()
     {
-        InitGenerator(1, 1, 20, 20);
+        InitGenerator(10, 10, null);
         StartGenerator();
     }
 
     /// <summary>
-    /// 정해진 그리드 내에 None Chamber를 생성
+    /// 생성할 맵에 대한 최소 정보 입력(Chamber의 가로 개수, Chamber의 세로 개수, 맵 구성요소 생성기)
     /// </summary>
-    private void makeNoneChamber()
+    public void InitGenerator(int numOfHorizontal, int numOfVertical, AContentsGenerator _generator)
     {
-        for (int i = 0; i < NumOfChamberInVertical; i++)
-        {
-            for (int j = 0; j < NumOfChamberInHorizontal; j++)
-            {
-                ChamberPosition.Add(new Vector2Int(i, j), new CChamber(EChamberType.None, new Vector2Int(i, j)));
-            }
-        }
+        generator = _generator;
+        NumOfChamberInHorizontal = numOfHorizontal;
+        NumOfChamberInVertical = numOfVertical;
+        //makeNoneChamber();
     }
+
+    /// <summary>
+    /// 맵 구동기 가동
+    /// </summary>
+    public void StartGenerator()
+    {
+        makeEssentialPath();
+        Debug.Log("Essential Over");
+        makeDummyPath(StartChamberPos);
+        Debug.Log("Dummy Over");
+        // generator를 이용해여 맵 구성요소 생성
+        //generator.GenerateContents();
+    }
+
+    /// <summary>
+    /// 정해진 그리드 내에 None Chamber를 생성 -> 불필요 메소드
+    /// </summary>
+    //private void makeNoneChamber()
+    //{
+    //    for (int i = 0; i < NumOfChamberInVertical; i++)
+    //    {
+    //        for (int j = 0; j < NumOfChamberInHorizontal; j++)
+    //        {
+    //            ChamberPosition.Add(new Vector2Int(i, j), new CChamber(EChamberType.None, new Vector2Int(i, j)));
+    //        }
+    //    }
+    //}
 
     /// <summary>
     /// 필수 경로를 생성
@@ -78,12 +78,14 @@ public class CGridDrivenContentsGenerator : MonoBehaviour
         Vector2Int currentPosition, nextPosition;
         Vector2Int[] adjacentPosition;
         // 필수 경로 시작 지점
-        currentPosition = StartChamber = new Vector2Int(0, (int)Random.Range(0.0f, NumOfChamberInVertical));
-        ChamberPosition[currentPosition].ChamberType = EChamberType.Essential;
+        currentPosition = StartChamberPos = new Vector2Int(0, (int)Random.Range(0.0f, NumOfChamberInVertical));
+        //ChamberPosition[currentPosition].ChamberType = EChamberType.Essential;
+        ChamberPosition.Add(currentPosition, new CChamber(EChamberType.Essential, currentPosition));
         // 필수 경로 인접 지점
         adjacentPosition = getAdjacentPath(currentPosition, true);
         nextPosition = adjacentPosition[(int)Random.Range(0.0f, adjacentPosition.Length)];
-        ChamberPosition[nextPosition].ChamberType = EChamberType.Essential;
+        //ChamberPosition[nextPosition].ChamberType = EChamberType.Essential;
+        ChamberPosition.Add(nextPosition, new CChamber(EChamberType.Essential, nextPosition));
         addFromCurrentToNextChamberPassage(currentPosition, nextPosition);
         currentPosition = nextPosition;
         // 그리드의 맨 오른쪽 위치 까지 진행
@@ -92,12 +94,13 @@ public class CGridDrivenContentsGenerator : MonoBehaviour
             adjacentPosition = getAdjacentPath(currentPosition, true);
 
             nextPosition = adjacentPosition[(int)Random.Range(0.0f, adjacentPosition.Length)];
-            ChamberPosition[nextPosition].ChamberType = EChamberType.Essential;
+            //ChamberPosition[nextPosition].ChamberType = EChamberType.Essential;
+            ChamberPosition.Add(nextPosition, new CChamber(EChamberType.Essential, nextPosition));
             addFromCurrentToNextChamberPassage(currentPosition, nextPosition);
             currentPosition = nextPosition;
         }
         // 도착 지점 설정
-        EndChamber = currentPosition;
+        EndChamberPos = currentPosition;
     }
 
     /// <summary>
@@ -121,7 +124,9 @@ public class CGridDrivenContentsGenerator : MonoBehaviour
 
         adjacentList.ForEach(delegate (Vector2Int adjPath)
         {
-            if (ChamberPosition.ContainsKey(adjPath) && ChamberPosition[adjPath].ChamberType == EChamberType.None)
+        //if (ChamberPosition.ContainsKey(adjPath) && ChamberPosition[adjPath].ChamberType == EChamberType.None)
+        if (!ChamberPosition.ContainsKey(adjPath) && adjPath.x >= 0 && adjPath.x < NumOfChamberInHorizontal
+        && adjPath.y >= 0 && adjPath.y < NumOfChamberInVertical)
             {
                 availableList.Add(adjPath);
             }
@@ -164,7 +169,8 @@ public class CGridDrivenContentsGenerator : MonoBehaviour
             return;
         }
         int index = (int)Random.Range(0.0f, adjacentChambers.Length);
-        ChamberPosition[adjacentChambers[index]].ChamberType = EChamberType.Dummy;
+        //ChamberPosition[adjacentChambers[index]].ChamberType = EChamberType.Dummy;
+        ChamberPosition.Add(adjacentChambers[index], new CChamber(EChamberType.Dummy, adjacentChambers[index]));
         addFromCurrentToNextChamberPassage(start, adjacentChambers[index]);
 
         Debug.Log(adjacentChambers[index]);
